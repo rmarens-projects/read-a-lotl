@@ -86,12 +86,17 @@
             () => {
                 recognizer.close();
 
-                // Send the transcript to Storyline after stopping recognition
+                // Get the transcript text from the resultBox
+                const transcriptText = document.getElementById("resultBox").innerText.trim();
+
+                // Remove all special characters (keeping only letters and spaces)
+                const cleanText = transcriptText.replace(/[^a-zA-Z\s]/g, "");
+
+                // Send the cleaned transcript to Storyline
                 if (window.parent.storylinePlayer) {
                     const storylinePlayer = window.parent.storylinePlayer;
-                    const transcriptText = document.getElementById("resultBox").innerText.trim(); // Get the transcript text
-                    storylinePlayer.SetVar("TranscriptText", transcriptText);
-                    console.log("Transcript sent to Storyline:", transcriptText);
+                    storylinePlayer.SetVar("TranscriptText", cleanText);
+                    console.log("Cleaned transcript sent to Storyline:", cleanText);
                 }
             },
             err => console.error(err)
