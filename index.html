@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Azure Speech-to-Text</title>
+  <title>Speech-to-Text</title>
   <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
   <style>
     body { font-family: Fredoka; padding: 20px; }
     #result { margin-top: 20px; font-size: 1.2em; }
-    button {background-color: none; border: none; color: none; padding: 4px; border-radius: 16px;}
+    button {background-color: none; border: 0; border-radius: 24px; color: none; padding: 4px; margin-right:4px; text-align: center; text-decoration: none; display: inline-block; font-size: 1px;}  
   </style>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
     <button id="startBtn"><img src="btn/btn_Record_green.png" width="64" height="64"></button>
   <button id="stopBtn" disabled><img src="btn/btn_Stop.png" width="64" height="64"></button>
 
-  <p id="result">Transcript will appear here.</p>
+  <p id="result"></p>
 
   <script>
     let recognizer;
