@@ -25,6 +25,14 @@
     let SpeechSDK;
 
     document.addEventListener("DOMContentLoaded", function () {
+          // Make sure Storyline's player is accessible
+        let storylinePlayer = null;
+        try {
+            storylinePlayer = window.parent.storylinePlayer || null;
+        } catch (e) {
+            console.log("Storyline player not available.");
+        }
+      
       const startBtn = document.getElementById("startBtn");
       const stopBtn = document.getElementById("stopBtn");
       const resultBox = document.getElementById("result");
@@ -70,16 +78,27 @@
       };
 
       stopBtn.onclick = function () {
-        stopBtn.disabled = true;
-        startBtn.disabled = false;
+    stopBtn.disabled = true;
+    startBtn.disabled = false;
 
-        if (recognizer) {
-          recognizer.stopContinuousRecognitionAsync(
-            () => recognizer.close(),
+    if (recognizer) {
+        recognizer.stopContinuousRecognitionAsync(
+            () => {
+                recognizer.close();
+
+                // Send the transcript to Storyline after stopping recognition
+                if (window.parent.storylinePlayer) {
+                    const storylinePlayer = window.parent.storylinePlayer;
+                    const transcriptText = document.getElementById("resultBox").innerText.trim(); // Get the transcript text
+                    storylinePlayer.SetVar("TranscriptText", transcriptText);
+                    console.log("Transcript sent to Storyline:", transcriptText);
+                }
+            },
             err => console.error(err)
-          );
-        }
-      };
+        );
+    }
+};
+
     });
   </script>
 
