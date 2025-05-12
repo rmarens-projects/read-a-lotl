@@ -1,41 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Read Aloud Recorder</title>
+  <title>Azure Speech-to-Text</title>
   <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    button { padding: 10px 20px; font-size: 16px; }
+    body { font-family: Fredoka; padding: 20px; }
+    #result { margin-top: 20px; font-size: 1.2em; }
+    button {background-color: none; border: none; color: none; padding: 4px; border-radius: 16px;}
   </style>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h2>Read Aloud</h2>
-  <p>Click the button, then begin reading the passage aloud.</p>
-  <button onclick="startRecognition()">Start Reading</button>
-  <p><strong>Transcription:</strong> <span id="output">Waiting...</span></p>
+
+    <button id="startBtn"><img src="btn/btn_Record_green.png" width="64" height="64"></button>
+  <button id="stopBtn" disabled><img src="btn/btn_Stop.png" width="64" height="64"></button>
+
+  <p id="result">Transcript will appear here.</p>
 
   <script>
-    const subscriptionKey = "825wruwAIMD2jKErKW8HXmBJYBJfxHcyuFiPAuMyD1CVeRpZ9rueJQQJ99BDACYeBjFXJ3w3AAAYACOGVaCL";
-    const serviceRegion = "eastus"; // e.g., eastus
+    let recognizer;
+    let SpeechSDK;
 
-    function startRecognition() {
-      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion);
-      speechConfig.speechRecognitionLanguage = "en-US";
-      speechConfig.setProperty(SpeechSDK.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "10000");
-      speechConfig.setProperty(SpeechSDK.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "10000");
+    document.addEventListener("DOMContentLoaded", function () {
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+      const resultBox = document.getElementById("result");
 
-      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-      const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+      // Load Speech SDK
+      if (window.SpeechSDK) {
+        SpeechSDK = window.SpeechSDK;
+      } else {
+        console.error("Speech SDK not loaded.");
+        return;
+      }
 
-      recognizer.recognizeOnceAsync(result => {
-        document.getElementById("output").textContent = result.text;
+      startBtn.onclick = function () {
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
 
-        // Send to Storyline
-        window.parent.postMessage({ transcript: result.text }, "*");
-        recognizer.close();
-      });
-    }
+        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription("825wruwAIMD2jKErKW8HXmBJYBJfxHcyuFiPAuMyD1CVeRpZ9rueJQQJ99BDACYeBjFXJ3w3AAAYACOGVaCL", "eastus");
+        speechConfig.speechRecognitionLanguage = "en-US";
+        const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+
+        recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+
+        recognizer.recognizing = function (s, e) {
+          resultBox.innerText = "(interim) " + e.result.text;
+        };
+
+        recognizer.recognized = function (s, e) {
+          if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+            resultBox.innerText = e.result.text;
+          } else if (e.result.reason === SpeechSDK.ResultReason.NoMatch) {
+            resultBox.innerText = "No speech recognized.";
+          }
+        };
+
+        recognizer.startContinuousRecognitionAsync();
+      };
+
+      stopBtn.onclick = function () {
+        stopBtn.disabled = true;
+        startBtn.disabled = false;
+
+        if (recognizer) {
+          recognizer.stopContinuousRecognitionAsync(
+            () => recognizer.close(),
+            err => console.error(err)
+          );
+        }
+      };
+    });
   </script>
+
 </body>
 </html>
