@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Read Aloud Recorder</title>
+  <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    button { padding: 10px 20px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Read Aloud</h2>
+  <p>Click the button, then begin reading the passage aloud.</p>
+  <button onclick="startRecognition()">Start Reading</button>
+  <p><strong>Transcription:</strong> <span id="output">Waiting...</span></p>
+
+  <script>
+    const subscriptionKey = "825wruwAIMD2jKErKW8HXmBJYBJfxHcyuFiPAuMyD1CVeRpZ9rueJQQJ99BDACYeBjFXJ3w3AAAYACOGVaCL";
+    const serviceRegion = "eastus"; // e.g., eastus
+
+    function startRecognition() {
+      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, serviceRegion);
+      speechConfig.speechRecognitionLanguage = "en-US";
+      speechConfig.setProperty(SpeechSDK.PropertyId.SpeechServiceConnection_InitialSilenceTimeoutMs, "10000");
+      speechConfig.setProperty(SpeechSDK.PropertyId.SpeechServiceConnection_EndSilenceTimeoutMs, "10000");
+
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+
+      recognizer.recognizeOnceAsync(result => {
+        document.getElementById("output").textContent = result.text;
+
+        // Send to Storyline
+        window.parent.postMessage({ transcript: result.text }, "*");
+        recognizer.close();
+      });
+    }
+  </script>
+</body>
+</html>
