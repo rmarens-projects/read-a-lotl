@@ -68,6 +68,16 @@ stopBtn.onclick = function () {
         recognizer.stopContinuousRecognitionAsync(
             () => {
                 recognizer.close();
+              setTimeout(() => {
+    if (window.parent && typeof window.parent.GetPlayer === 'function') {
+        const player = window.parent.GetPlayer();
+        player.SetVar("TranscriptText", cleanText);
+        console.log("Sent to Storyline:", cleanText);
+    } else {
+        console.warn("Storyline player not available.");
+    }
+}, 500);
+
 
                 const transcriptText = document.getElementById("result").innerText.trim();
                 const cleanText = transcriptText.replace(/[^a-zA-Z\s]/g, "");
