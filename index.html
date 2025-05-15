@@ -6,7 +6,7 @@
   <style>
     body { font-family: Fredoka; padding: 20px; max-width: 180px; }
     #result { margin-top: 20px; font-size: 1.2em; }
-    button {background-color: none; border: 0; border-radius: 24px; color: none; padding: 4px; margin-right:4px; text-align: center; text-decoration: none; display: inline-block; font-size: 1px;}  
+    button { background-color: none; border: 0; border-radius: 24px; padding: 4px; margin-right:4px; }
   </style>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,39 +15,27 @@
 </head>
 <body>
 
-    <button id="startBtn"><img src="btn/btn_Record_green.png" width="64" height="64"></button>
+  <button id="startBtn"><img src="btn/btn_Record_green.png" width="64" height="64"></button>
   <button id="stopBtn" disabled><img src="btn/btn_Stop.png" width="64" height="64"></button>
 
   <p id="result"></p>
 
   <script>
     let recognizer;
-    let SpeechSDK;
 
     document.addEventListener("DOMContentLoaded", function () {
-          // Make sure Storyline's player is accessible
-        let storylinePlayer = null;
-        try {
-            storylinePlayer = window.parent.storylinePlayer || null;
-        } catch (e) {
-            console.log("Storyline player not available.");
-        }
-      
       const startBtn = document.getElementById("startBtn");
       const stopBtn = document.getElementById("stopBtn");
       const resultBox = document.getElementById("result");
 
-      // Load Speech SDK
-      if (window.SpeechSDK) {
-        SpeechSDK = window.SpeechSDK;
-      } else {
+      // Check that Speech SDK is loaded
+      if (!window.SpeechSDK) {
         console.error("Speech SDK not loaded.");
         return;
       }
 
       startBtn.onclick = function () {
         resultBox.innerText = ""; // Clear previous result
-        
         startBtn.disabled = true;
         stopBtn.disabled = false;
 
@@ -57,53 +45,47 @@
         speechConfig.setProperty("SPEECH-END-SILENCE-TIMEOUT", "10000");
 
         const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-
         recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 
         recognizer.recognized = function (s, e) {
-  if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech && e.result.text) {
-    // Add a space if the last character in the box isn't already a space
-    const currentText = resultBox.innerText.trim();
-    const needsSpace = currentText && !/[.?!]\s$/.test(currentText);
-
-    resultBox.innerText = currentText + (needsSpace ? " " : " ") + e.result.text;
-  } else if (e.result.reason === SpeechSDK.ResultReason.NoMatch) {
-    resultBox.innerText += "\nNo speech recognized.\n";
-  }
-};
-
-
+          if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech && e.result.text) {
+            const currentText = resultBox.innerText.trim();
+            const needsSpace = currentText && !/[.?!]\s$/.test(currentText);
+            resultBox.innerText = currentText + (needsSpace ? " " : "") + e.result.text;
+          } else if (e.result.reason === SpeechSDK.ResultReason.NoMatch) {
+            resultBox.innerText += "\nNo speech recognized.\n";
+          }
+        };
 
         recognizer.startContinuousRecognitionAsync();
       };
 
       stopBtn.onclick = function () {
-    stopBtn.disabled = true;
-    startBtn.disabled = false;
+        stopBtn.disabled = true;
+        startBtn.disabled = false;
 
-    if (recognizer) {
-        recognizer.stopContinuousRecognitionAsync(
+        if (recognizer) {
+          recognizer.stopContinuousRecognitionAsync(
             () => {
-                recognizer.close();
+              recognizer.close();
 
-                // Get the transcript text from the resultBox
-                const transcriptText = document.getElementById("resultBox").innerText.trim();
+              // Get final transcript and clean it
+              const transcriptText = resultBox.innerText.trim();
+              const cleanText = transcriptText.replace(/[^a-zA-Z0-9.,!?'" ]/g, ""); // remove odd characters
 
-                // Remove all special characters (keeping only letters and spaces)
-                const cleanText = transcriptText.replace(/[^a-zA-Z\s]/g, "");
-
-                // Send the cleaned transcript to Storyline
-                if (window.parent.storylinePlayer) {
-                    const storylinePlayer = window.parent.storylinePlayer;
-                    storylinePlayer.SetVar("TranscriptText", cleanText);
-                    console.log("Cleaned transcript sent to Storyline:", cleanText);
-                }
+              // Send to Storyline variable
+              try {
+                const player = window.parent.GetPlayer(); // Access Storyline player
+                player.SetVar("TranscriptText", cleanText);
+                console.log("Transcript sent to Storyline:", cleanText);
+              } catch (e) {
+                console.error("Failed to send transcript to Storyline:", e);
+              }
             },
-            err => console.error(err)
-        );
-    }
-};
-
+            err => console.error("Stop error:", err)
+          );
+        }
+      };
     });
   </script>
 
